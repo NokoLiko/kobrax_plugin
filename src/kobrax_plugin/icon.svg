@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="#009688">
+  <!-- Kobra X plugin tab icon: bed-slinger printer + LAN (wifi). Same drawing as assets/icon.png. -->
+  <path d="M327 128a86 86 0 0 1 114 0" fill="none" stroke="#009688" stroke-width="22" stroke-linecap="round"/>
+  <path d="M348 150a56 56 0 0 1 72 0" fill="none" stroke="#009688" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="384" cy="176" r="14"/>
+  <rect x="110" y="226" width="260" height="28" rx="10"/>
+  <rect x="110" y="238" width="30" height="160" rx="10"/>
+  <rect x="340" y="238" width="30" height="160" rx="10"/>
+  <rect x="200" y="206" width="76" height="80" rx="14"/>
+  <path d="M224 284h28l-14 22z"/>
+  <rect x="194" y="306" width="88" height="44" rx="4" fill="#ff8a3d"/>
+  <rect x="146" y="352" width="188" height="18" rx="6"/>
+  <rect x="88" y="390" width="304" height="28" rx="12"/>
+</svg>

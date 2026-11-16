@@ -1,3 +1,5 @@
+<img src="assets/icon.png" alt="" width="96" align="right">
+
 # kobrax_plugin
 
 Plugin de **OrcaSlicer** para usar una **Anycubic Kobra X** por la red local (modo LAN), sin la

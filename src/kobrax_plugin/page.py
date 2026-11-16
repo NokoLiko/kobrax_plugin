@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import threading
 from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -297,6 +298,9 @@ def make_page_capability(orca: Any, get_agent: Callable[[], Any]) -> type | None
 
         def get_ui(self) -> str:
             return PAGE_HTML
+
+        def get_icon(self) -> str:
+            return os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.svg")
 
         def on_message(self, data: Any) -> None:
             agent = get_agent()
