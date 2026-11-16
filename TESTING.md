@@ -57,6 +57,14 @@ Leyenda: ✅ funciona · ❌ falla · ⏳ pendiente · ⚠️ funciona con obser
 | Lista de archivos | ❌ | `file/listLocal` responde 10112 con todas las variantes probadas; resolver con la captura del Slicer Next |
 | Offset de Z | ⏳ | sin implementar hasta confirmar el formato (riesgo de chocar la boquilla) |
 
+## Distribución
+
+| Función | Estado | Notas |
+|---|---|---|
+| Instalar desde Orca Cloud (Browse plugins) | ✅ | 2026-11-15, v0.6.0; el nombre `kobrax_plugin_any.whl` funciona |
+| Publicación automática al crear un release | ✅ | 2026-11-16, v0.6.1: wheel adjunto al release y publicado en Orca Cloud (201) |
+| Una sola pregunta de permiso por la IP | ⏳ | v0.6.1 |
+
 ## Fuera de alcance por ahora
 
 - ACE Pro (secado, alimentación automática, humedad): no hay ACE para probar.
