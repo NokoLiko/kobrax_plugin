@@ -1,0 +1,21 @@
+[project]
+name = "kobrax-plugin"
+version = "0.6.0"
+description = "OrcaSlicer printer agent for the Anycubic Kobra X over LAN"
+readme = "README.md"
+authors = [{ name = "Nicolas Stirnemann", email = "nstirnemann59@gmail.com" }]
+requires-python = ">=3.12"
+dependencies = [
+    "cryptography>=42",
+    "paho-mqtt>=2.1.0",
+    "requests>=2.31",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.8,<0.14.0"]
+build-backend = "uv_build"
