@@ -446,3 +446,20 @@ def test_local_webui_serves_page_and_requires_header():
             urllib.request.urlopen(bad_host)
     finally:
         ui.stop()
+
+
+
+def test_audit_denial_detection_and_preflight(monkeypatch):
+    import socket as socket_mod
+
+    from kobrax_plugin import main as m
+
+    wrapped = RuntimeError("HTTPConnectionPool: Failed to establish a new connection")
+    wrapped.__cause__ = RuntimeError('Plugin attempted audited operation "socket.getaddrinfo" without permission')
+    assert m._is_audit_denial(wrapped)
+    assert m._is_audit_denial(PermissionError("x"))
+    assert not m._is_audit_denial(TimeoutError("timed out"))
+    calls = []
+    monkeypatch.setattr(socket_mod, "getaddrinfo", lambda *a, **k: calls.append((a, k)) or [])
+    m._preflight_network_permission("192.168.0.84")
+    assert calls[0][0][0] == "192.168.0.84" and calls[0][1]["flags"] == socket_mod.AI_NUMERICHOST

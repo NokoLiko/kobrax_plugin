@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import socket
 import sys
 import threading
 import time
@@ -27,7 +28,8 @@ else:
     pa = None
     _AgentBase = object
 
-PLUGIN_VERSION = "0.6.0"
+PLUGIN_VERSION = "0.6.1"
+AGENT_ID = "anykubic"
 
 log = logging.getLogger("kobrax_plugin")
 if not log.handlers:  # goes to OrcaSlicer's python_*.log through stderr
@@ -89,6 +91,46 @@ def orca_model_dir() -> str:
     if hasattr(os, "getuid"):
         base = os.path.join(base, f"orcaslicer_{os.getuid()}")
     return os.path.join(base, "orcaslicer_model")
+
+
+AUDIT_RETRY_S = 60
+
+
+def _is_audit_denial(err: BaseException) -> bool:
+    seen: set[int] = set()
+    while err is not None and id(err) not in seen:
+        seen.add(id(err))
+        if isinstance(err, PermissionError) or "audited operation" in str(err):
+            return True
+        err = err.__cause__ or err.__context__
+    return False
+
+
+def _preflight_network_permission(host: str) -> None:
+    """Trigger OrcaSlicer's permission prompt for `host` on the UI thread.
+
+    A prompt raised on a background thread is shown without waiting and the call is refused,
+    so the connection loop would stack one prompt per retry. On the UI thread the prompt is
+    modal and its answer is remembered before the loop starts. AI_NUMERICHOST: no DNS lookup,
+    so this never blocks the UI (a host name just fails here after the audit check).
+    """
+    try:
+        socket.getaddrinfo(host, lan.HTTP_PORT, type=socket.SOCK_STREAM, flags=socket.AI_NUMERICHOST)
+    except Exception:  # noqa: BLE001 - denied, or not a numeric address
+        pass
+
+
+def preset_printer_host() -> str:
+    """Host of the selected printer preset when it uses this agent ("" otherwise)."""
+    if orca is None:
+        return ""
+    try:
+        preset = orca.host.preset_bundle().printers.get_edited_preset()
+        if str(preset.config_value("printer_agent") or "") != AGENT_ID:
+            return ""
+        return _clean_host(str(preset.config_value("print_host") or ""))
+    except Exception:  # noqa: BLE001 - GUI not ready, API missing
+        return ""
 
 
 def _clean_host(host: str) -> str:
@@ -296,7 +338,7 @@ class KobraX(_AgentBase):
 
     def get_agent_info(self) -> pa.AgentInfo:
         return pa.AgentInfo(
-            "anykubic",
+            AGENT_ID,
             "anykubic",
             PLUGIN_VERSION,
             "Te permite conectarte a la KobraX por wifi",
@@ -461,6 +503,11 @@ class KobraX(_AgentBase):
                     session.connect()
                 except Exception as err:  # noqa: BLE001
                     log.warning("connect to %s failed: %s", self._host, err)
+                    if _is_audit_denial(err):
+                        # OrcaSlicer is (or was) asking for permission. Retrying quickly
+                        # would stack one identical prompt per attempt.
+                        self._sleep(gen, AUDIT_RETRY_S)
+                        continue
                     self._sleep(gen, backoff)
                     backoff = min(backoff * 2, 60)
                     continue
@@ -604,6 +651,7 @@ class KobraX(_AgentBase):
             return ERR
         self._storage_dir()
         self._start_webui()
+        _preflight_network_permission(host)
         with self._lock:
             self._gen += 1
             gen = self._gen
@@ -1032,9 +1080,13 @@ if orca is not None:
                 #    whose subfolder changes every session, so the whole tree is granted.
                 #  - threads, plus the loopback binds asked about on the first connection.
                 # The printer's own address is asked once and then remembered.
+                sockets = ["('127.0.0.1', 0)", "('', 0)", f"('127.0.0.1', {WEBUI_PORT})"]
+                printer = preset_printer_host()
+                if printer:
+                    sockets.append(printer)  # same dialog instead of a separate prompt later
                 orca.request_permissions(
                     fs_read=[os.path.join(orca_model_dir(), "*")],
-                    network_socket=["('127.0.0.1', 0)", "('', 0)", f"('127.0.0.1', {WEBUI_PORT})"],
+                    network_socket=sockets,
                     threading=True,
                 )
             except (AttributeError, TypeError):
