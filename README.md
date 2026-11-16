@@ -52,7 +52,12 @@ instalar el plugin, así que necesita internet la primera vez.
 
 ### 1. Conseguir el plugin
 
-Descargá el archivo `kobrax_plugin-<versión>-py3-none-any.whl` de la página de *Releases* del
+**Desde Orca Cloud (lo más fácil):** en el diálogo de Plugins de Orca, **Browse plugins**,
+buscá *Kobra X* y suscribite. Necesitás una cuenta de Orca Cloud con la sesión iniciada en Orca.
+Orca lo instala y te avisa cuando hay una versión nueva. Si lo instalás así, seguí desde el
+[paso 3](#3-activar-los-agentes-de-impresora).
+
+**A mano:** descargá el archivo `kobrax_plugin-<versión>-py3-none-any.whl` de la página de *Releases* del
 repositorio, o generalo vos (necesitás [uv](https://docs.astral.sh/uv/)):
 
 ```sh
@@ -202,6 +207,18 @@ uv run python tools/sniff.py <ip-de-la-impresora> -o captura.jsonl
 Dejalo corriendo mientras usás Anycubic Slicer Next en modo LAN, o la pantalla de la impresora.
 Cada tipo de mensaje nuevo se muestra completo, y los repetidos solo se cuentan.
 `--commands-only` muestra únicamente los comandos.
+
+### Publicar una versión
+
+1. Subí la versión en `pyproject.toml` y en `PLUGIN_VERSION` (`src/kobrax_plugin/main.py`).
+2. Creá un release en GitHub con el tag `v<versión>` (por ejemplo `v0.6.0`). En el cuerpo del
+   release poné los cambios: se usan como changelog en Orca Cloud.
+3. El workflow `.github/workflows/publish-orcacloud.yml` verifica que el tag coincida con la
+   versión, arma el wheel, lo adjunta al release y lo publica en Orca Cloud.
+
+Antes del primer release automático hay que crear el plugin a mano en
+[Orca Cloud](https://cloud.orcaslicer.com) (Plugins → Shared Plugins → **+**) y conectar el
+repositorio en **Edit plugin → GitHub publishing**.
 
 ## Créditos
 
