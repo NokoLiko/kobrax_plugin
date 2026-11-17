@@ -202,9 +202,8 @@ un archivo.
   luz tipo 3).
 - **Inicio de impresión:** el formato de `print/start` está validado solo en la Kobra X.
 
-Si tenés una de estas impresoras y querés ayudar, abrí un issue con una captura de
-`tools/sniff.py` (ver [Descubrir comandos nuevos](#descubrir-comandos-nuevos)) mientras usás
-Anycubic Slicer Next en modo LAN. Con eso se pueden corregir los códigos de ese modelo.
+Si tenés una de estas impresoras y querés ayudar, seguí [CAPTURE.md](CAPTURE.md) y mandanos la
+captura en un issue. Con eso se pueden corregir los códigos de ese modelo.
 
 ## Seguridad
 
@@ -231,6 +230,7 @@ Estructura:
 | `src/kobrax_plugin/job.py` | Preparación del trabajo y armado de `print/start` |
 | `src/kobrax_plugin/page.py` | Página de la Kobra X y su servidor local |
 | `src/kobrax_plugin/errors.py` | Códigos de error de Anycubic |
+| `src/kobrax_plugin/models.py` | Diferencias por modelo: numeración de ejes, home y dirección de Z |
 | `tools/sniff.py` | Captura del tráfico MQTT, para descubrir comandos |
 
 ### Descubrir comandos nuevos
@@ -246,6 +246,9 @@ uv run python tools/sniff.py <ip-de-la-impresora> -o captura.jsonl
 Dejalo corriendo mientras usás Anycubic Slicer Next en modo LAN, o la pantalla de la impresora.
 Cada tipo de mensaje nuevo se muestra completo, y los repetidos solo se cuentan.
 `--commands-only` muestra únicamente los comandos.
+
+**¿Querés ayudar a completar el plugin?** Seguí [CAPTURE.md](CAPTURE.md): es una lista de acciones para
+hacer en Anycubic Slicer Next mientras corre `sniff.py`, con los pasos para mandarnos la captura y sumarla al plugin.
 
 ### Publicar una versión
 
