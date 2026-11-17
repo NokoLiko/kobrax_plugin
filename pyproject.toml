@@ -1,6 +1,6 @@
 [project]
 name = "kobrax-plugin"
-version = "0.6.3"
+version = "0.7.0"
 description = "OrcaSlicer printer agent for the Anycubic Kobra X over LAN"
 readme = "README.md"
 authors = [{ name = "Nicolas Stirnemann", email = "nstirnemann59@gmail.com" }]

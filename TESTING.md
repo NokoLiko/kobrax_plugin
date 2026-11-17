@@ -67,6 +67,17 @@ Leyenda: ✅ funciona · ❌ falla · ⏳ pendiente · ⚠️ funciona con obser
 | Sin pregunta "FsReadWrite:open" al conectar (netrc/.pyc) | ✅ | 2026-11-17, v0.6.3 |
 | Sin pregunta por ("", 0) en cada arranque | ✅ | 2026-11-17, v0.6.3 |
 
+## Otros modelos (v0.7.0)
+
+Perfiles de movimiento en `models.py`, sin probar en hardware. Ver "Otras impresoras Anycubic" en el README.
+
+| Modelo | Conexión y estado | Imprimir | Home y ejes | Notas |
+|---|---|---|---|---|
+| Kobra 3 / 3 V2 (20024 / 20027) | ⏳ | ⏳ | ⏳ | Z invertido como en la X; home=4 |
+| Kobra 3 Max (20026) | ⏳ | ⏳ | ⏳ | Z invertido como en la X; home=4 |
+| Kobra S1 (20025) | ⏳ | ⏳ | ⏳ | Z sin invertir (la cama baja); home=4 |
+| Kobra S1 Max (20029) | ⏳ | ⏳ | ⏳ | Z sin invertir (la cama baja); home=4 |
+
 ## Fuera de alcance por ahora
 
 - ACE Pro (secado, alimentación automática, humedad): no hay ACE para probar.

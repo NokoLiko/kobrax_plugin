@@ -138,7 +138,7 @@ navegador no puede mandarle comandos a la impresora.
 | No aparece el ícono de wifi | Es normal con **Use printer agents** activado. Ver el paso 4 |
 | "Device (Web)" dice *Connection refused* | Orca intenta abrir una página web en la IP de la impresora, y la Kobra X no tiene. Cargá `http://127.0.0.1:18930/` en **Device UI** o usá la pestaña **Device** |
 | La pestaña Device muestra cosas de Bambu Lab y no la impresora | Orca no está usando el plugin. Revisá que el perfil tenga **Printer Agent: anykubic** y que esté **guardado** |
-| Pide permiso varias veces | Aceptá cada pedido: quedan guardados. Después de reinstalar el plugin, Orca vuelve a preguntar |
+| Pide permiso en cada arranque | Corregido en la v0.6.3: actualizá el plugin. Si antes habías aceptado "FsReadWrite:open", podés quitarlo en el diálogo de plugins porque ya no hace falta. Después de reinstalar el plugin, Orca vuelve a preguntar una vez |
 | El primer envío de una sesión falla | Era por un permiso de lectura que se resolvió en la v0.4.1. Si te pasa, aceptá el permiso y volvé a enviar |
 | Pide hacer home antes de cada movimiento | La impresora no informa si los ejes tienen home: el plugin lo recuerda después de un home hecho desde Orca. Al reconectar, Orca vuelve a pedirlo |
 | "La impresora no confirmó el inicio" | El plugin manda el inicio **una sola vez** para no arrancar dos trabajos. Revisá la pantalla de la impresora antes de volver a enviar |
@@ -168,6 +168,43 @@ datos de Orca, en los archivos `python_*.log`:
 - La lista de archivos de la impresora todavía no funciona: el comando devuelve error.
 - Los botones "Bed" de Orca mueven el **cabezal** en Z, porque en la Kobra X la cama no sube ni
   baja. La flecha de arriba sube el cabezal.
+
+## Otras impresoras Anycubic
+
+La Kobra 3, la Kobra 3 Max, la Kobra S1 y la S1 Max usan el mismo protocolo LAN que la Kobra X:
+handshake por HTTP en el puerto 18910 y MQTT con TLS en el 9883. El plugin lee el modelo de la
+impresora (`modelId`) y ajusta los movimientos según el modelo (`models.py`). **Ninguna de
+estas impresoras se probó todavía**: lo que sigue es lo que se espera, no lo comprobado.
+
+| Modelo | `modelId` | Z en Orca | Códigos de movimiento |
+|---|---|---|---|
+| Kobra X | 20030 | Mueve el cabezal (signo invertido) | X=1, Y=2, Z=3, home=5. **Probado** |
+| Kobra 3 / 3 V2 | 20024 / 20027 | Mueve el cabezal (signo invertido) | Y=1, X=2, Z=3, home=4. Sin probar |
+| Kobra 3 Max | 20026 | Mueve el cabezal (signo invertido) | Y=1, X=2, Z=3, home=4. Sin probar |
+| Kobra S1 | 20025 | Mueve la cama (como espera Orca) | Y=1, X=2, Z=3, home=4. Sin probar |
+| Kobra S1 Max | 20029 | Mueve la cama (como espera Orca) | Y=1, X=2, Z=3, home=4. Sin probar |
+
+Los `modelId` salen de [Rinkhals](https://github.com/jbatonnet/Rinkhals). Los códigos de home de
+la Kobra 3 y la S1 salen de
+[ianloic/anycubic-orca-plugin](https://github.com/ianloic/anycubic-orca-plugin). Que X e Y usen la
+misma numeración al moverse es una suposición.
+
+**Qué tiene más chances de andar:** conectar, ver el estado y las temperaturas, y subir e imprimir
+un archivo.
+
+**Qué puede fallar:**
+- **Home y movimiento de ejes:** con códigos equivocados se mueve otro eje. Probalo primero con
+  distancias chicas y la mano cerca del botón de apagado.
+- **Filamento:** el plugin espera la caja de 4 slots de la Kobra X (`multiColorBox`). Con un
+  ACE Pro de la Kobra 3 o la S1, o sin caja, la asignación de colores y los slots pueden no
+  aparecer.
+- **Ventiladores, luz y modo de velocidad:** se usan los de la Kobra X (pieza, auxiliar y caja;
+  luz tipo 3).
+- **Inicio de impresión:** el formato de `print/start` está validado solo en la Kobra X.
+
+Si tenés una de estas impresoras y querés ayudar, abrí un issue con una captura de
+`tools/sniff.py` (ver [Descubrir comandos nuevos](#descubrir-comandos-nuevos)) mientras usás
+Anycubic Slicer Next en modo LAN. Con eso se pueden corregir los códigos de ese modelo.
 
 ## Seguridad
 

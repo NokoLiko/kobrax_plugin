@@ -227,8 +227,9 @@ def test_agent_answers_version_and_rejects_raw_gcode():
 class _FakeSession:
     connected = True
 
-    def __init__(self):
+    def __init__(self, model_id="20030"):
         self.sent = []
+        self.creds = types.SimpleNamespace(model_id=model_id)
 
     def publish(self, source, kind, action, data=None):
         self.sent.append((source, kind, action, data))
@@ -463,3 +464,24 @@ def test_audit_denial_detection_and_preflight(monkeypatch):
     monkeypatch.setattr(socket_mod, "getaddrinfo", lambda *a, **k: calls.append((a, k)) or [])
     m._preflight_network_permission("192.168.0.84")
     assert calls[0][0][0] == "192.168.0.84" and calls[0][1]["flags"] == socket_mod.AI_NUMERICHOST
+
+
+def test_motion_layout_per_model():
+    from kobrax_plugin.models import KOBRA_X, profile_for
+
+    assert profile_for("20030") is KOBRA_X and profile_for("99999") is KOBRA_X
+    s1 = profile_for("20025")
+    assert s1.name == "Anycubic Kobra S1" and not s1.confirmed and s1.axis_sign["Z"] == 1
+    k3m = profile_for("20026")
+    assert k3m.axis_sign["Z"] == -1 and k3m.home_all == 4
+
+    a = _agent()
+    a._session = _FakeSession("20025")  # Kobra S1: bed moves in Z, X/Y numbered 2/1
+    assert a.command_axis_control("dev", "Z", 10.0, -1, 900, True, False, 0, True) == 0
+    assert a.command_axis_control("dev", "X", 1.0, 5, 900, True, False, 0, True) == 0
+    assert a.command_go_home("dev", False, False, 0, True) == 0
+    assert [d for *_, d in a._session.sent] == [
+        {"axis": 3, "move_type": 0, "distance": 10},
+        {"axis": 2, "move_type": 1, "distance": 5},
+        {"axis": 4, "move_type": 2, "distance": 0},
+    ]

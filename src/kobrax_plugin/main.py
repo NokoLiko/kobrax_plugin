@@ -11,6 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 from . import lan
+from .models import ModelProfile, profile_for
 from .job import JobError, build_box_mapping, build_start_payload, prepare_gcode
 from .errors import error_from_report
 from .page import WEBUI_PORT, LocalWebUI, make_page_capability
@@ -28,7 +29,7 @@ else:
     pa = None
     _AgentBase = object
 
-PLUGIN_VERSION = "0.6.3"
+PLUGIN_VERSION = "0.7.0"
 AGENT_ID = "anykubic"
 
 log = logging.getLogger("kobrax_plugin")
@@ -56,13 +57,8 @@ STAGE_CREATE, STAGE_UPLOAD, STAGE_SENDING, STAGE_FINISHED = 0, 1, 3, 6
 CONNECT_OK, CONNECT_FAILED, CONNECT_LOST = 0, 1, 2
 
 POLL_INFO_S = 3
-# axis/move: axis 1/2/3 = X/Y/Z, 4 = XY, 5 = XYZ; move_type 0 = negative, 1 = positive, 2 = home
-AXIS_IDS = {"X": 1, "Y": 2, "Z": 3}
-# OrcaSlicer's "Bed" jog buttons assume a printer whose bed moves in Z ("bed up" = Z-). On the
-# Kobra X Z moves the print head, so the sign is flipped to make the up arrow raise the head
-# (checked on hardware 2026-11-15: unflipped, "up" lowered the head).
-AXIS_SIGN = {"X": 1, "Y": 1, "Z": -1}
-AXIS_HOME_XYZ = 5
+# axis/move: move_type 0 = negative, 1 = positive, 2 = home. Axis numbering and the Z direction
+# depend on the model (models.py). On the Kobra X, unflipped, "up" lowered the head (2026-11-15).
 # OrcaSlicer fan index (M106 P / set_fan fan_index) -> Kobra X fan
 FAN_BY_INDEX = {0: "part", 1: "part", 2: "aux", 3: "box"}
 MOVE_NEGATIVE, MOVE_POSITIVE, MOVE_HOME = 0, 1, 2
@@ -169,6 +165,7 @@ class KobraX(_AgentBase):
         self._host = ""
         self._access_code = ""
         self._session: lan.KobraMqtt | None = None
+        self._warned_profile = False
         self._creds: lan.Credentials | None = None
         self._state = PrinterState()
         self._waiters: list[ReportPredicate] = []
@@ -978,7 +975,15 @@ class KobraX(_AgentBase):
         except lan.KobraError:
             return ERR
 
-    # Movement: Kobra X axis/move over MQTT (stribor/anycubic_kobrax). Untested on hardware.
+    # Movement: axis/move over MQTT (stribor/anycubic_kobrax); layout per model in models.py.
+    def _profile(self) -> ModelProfile:
+        session = self._session
+        profile = profile_for(session.creds.model_id if session is not None else None)
+        if not profile.confirmed and not self._warned_profile:
+            self._warned_profile = True
+            log.warning("%s: motion codes not checked on this model yet (see README)", profile.name)
+        return profile
+
     def _printing(self) -> bool:
         return self._state.gcode_state() in ("RUNNING", "PREPARE", "PAUSE")
 
@@ -986,7 +991,7 @@ class KobraX(_AgentBase):
         if is_printing or self._printing():
             return NOT_SUPPORTED
         try:
-            data = {"axis": AXIS_HOME_XYZ, "move_type": MOVE_HOME, "distance": 0}
+            data = {"axis": self._profile().home_all, "move_type": MOVE_HOME, "distance": 0}
             self._require_session().publish("web", "axis", "move", data)
         except lan.KobraError:
             return ERR
@@ -998,11 +1003,13 @@ class KobraX(_AgentBase):
     def command_axis_control(
         self, dev_id, axis, unit, input_val, speed, is_core_xy, supports_mqtt_axis_control, sequence_id, lan_mode
     ) -> int:
-        axis_id = AXIS_IDS.get(str(axis).upper())
+        profile = self._profile()
+        name = str(axis).upper()
+        axis_id = profile.axis_ids.get(name)
         if axis_id is None or self._printing():
             return NOT_SUPPORTED  # E (extrude) has no known MQTT command
-        # same as OrcaSlicer's "G1 <axis><unit*value>", with the Z sign adapted (see AXIS_SIGN)
-        distance = float(unit) * float(input_val) * AXIS_SIGN[str(axis).upper()]
+        # same as OrcaSlicer's "G1 <axis><unit*value>", with the Z sign adapted to the model
+        distance = float(unit) * float(input_val) * profile.axis_sign[name]
         if distance == 0:
             return OK
         magnitude = abs(distance)
