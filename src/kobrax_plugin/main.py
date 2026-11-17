@@ -28,7 +28,7 @@ else:
     pa = None
     _AgentBase = object
 
-PLUGIN_VERSION = "0.6.2"
+PLUGIN_VERSION = "0.6.3"
 AGENT_ID = "anykubic"
 
 log = logging.getLogger("kobrax_plugin")
@@ -1080,7 +1080,9 @@ if orca is not None:
                 #    whose subfolder changes every session, so the whole tree is granted.
                 #  - threads, plus the loopback binds asked about on the first connection.
                 # The printer's own address is asked once and then remembered.
-                sockets = ["('127.0.0.1', 0)", "('', 0)", f"('127.0.0.1', {WEBUI_PORT})"]
+                # No "('', 0)": OrcaSlicer cannot match a host-less address against the saved grant
+                # and would ask on every launch; lan._LanClient never binds it.
+                sockets = ["('127.0.0.1', 0)", f"('127.0.0.1', {WEBUI_PORT})"]
                 printer = preset_printer_host()
                 if printer:
                     sockets.append(printer)  # same dialog instead of a separate prompt later

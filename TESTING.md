@@ -65,6 +65,7 @@ Leyenda: ✅ funciona · ❌ falla · ⏳ pendiente · ⚠️ funciona con obser
 | Publicación automática al crear un release | ✅ | 2026-11-16, v0.6.1: wheel adjunto al release y publicado en Orca Cloud (201) |
 | Una sola pregunta de permiso por la IP | ⏳ | v0.6.1 |
 | Sin pregunta "FsReadWrite:open" al conectar (netrc/.pyc) | ⏳ | v0.6.2 |
+| Sin pregunta por ("", 0) en cada arranque | ⏳ | v0.6.3 |
 
 ## Fuera de alcance por ahora
 

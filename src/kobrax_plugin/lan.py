@@ -14,6 +14,7 @@ import logging
 import os
 import platform
 import secrets
+import socket
 import ssl
 import string
 import tempfile
@@ -226,6 +227,18 @@ def purge_tls_dirs(work_dir: str) -> None:
 ReportFn = Callable[[str, dict[str, Any]], None]
 
 
+class _LanClient(mqtt.Client):
+    """paho client that connects without binding a source address or reading proxy settings.
+
+    paho always passes source_address=("", 0), so every connection binds ('', 0). OrcaSlicer
+    stores that grant but cannot match it when the plugin declares it again (the address has
+    no host), so declaring it asked on every launch. The printer is on the LAN: no proxy.
+    """
+
+    def _create_socket_connection(self) -> socket.socket:
+        return socket.create_connection((self._host, self._port), timeout=self._connect_timeout)
+
+
 class KobraMqtt:
     """One TLS MQTT session to the printer's local broker."""
 
@@ -279,7 +292,7 @@ class KobraMqtt:
         return ctx
 
     def connect(self, timeout: float = 10) -> None:
-        client = mqtt.Client(
+        client = _LanClient(
             callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
             client_id=f"orca-kobrax-{uuid.uuid4()}",
             protocol=mqtt.MQTTv311,
