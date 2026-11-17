@@ -28,7 +28,7 @@ else:
     pa = None
     _AgentBase = object
 
-PLUGIN_VERSION = "0.6.1"
+PLUGIN_VERSION = "0.6.2"
 AGENT_ID = "anykubic"
 
 log = logging.getLogger("kobrax_plugin")

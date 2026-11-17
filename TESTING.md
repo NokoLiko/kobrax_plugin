@@ -64,6 +64,7 @@ Leyenda: ✅ funciona · ❌ falla · ⏳ pendiente · ⚠️ funciona con obser
 | Instalar desde Orca Cloud (Browse plugins) | ✅ | 2026-11-15, v0.6.0; el nombre `kobrax_plugin_any.whl` funciona |
 | Publicación automática al crear un release | ✅ | 2026-11-16, v0.6.1: wheel adjunto al release y publicado en Orca Cloud (201) |
 | Una sola pregunta de permiso por la IP | ⏳ | v0.6.1 |
+| Sin pregunta "FsReadWrite:open" al conectar (netrc/.pyc) | ⏳ | v0.6.2 |
 
 ## Fuera de alcance por ahora
 

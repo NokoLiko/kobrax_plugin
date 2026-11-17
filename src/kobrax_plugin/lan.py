@@ -58,9 +58,22 @@ class Credentials:
 # --------------------------------------------------------------------------- HTTP
 
 
+def _http() -> requests.Session:
+    """A session that ignores the environment (proxies, ~/.netrc).
+
+    The printer is on the LAN, so proxy settings never apply. It also keeps requests from
+    importing netrc lazily in our threads: inside OrcaSlicer that import writes a .pyc through
+    a file descriptor, which the audit hook asks about on every launch ("FsReadWrite:open").
+    """
+    session = requests.Session()
+    session.trust_env = False
+    return session
+
+
 def fetch_info(host: str, timeout: float = 5) -> dict[str, Any]:
     """GET /info. Unauthenticated; returns the token used for the handshake."""
-    resp = requests.get(f"http://{host}:{HTTP_PORT}/info", timeout=timeout)
+    with _http() as http:
+        resp = http.get(f"http://{host}:{HTTP_PORT}/info", timeout=timeout)
     resp.raise_for_status()
     info = resp.json()
     if not isinstance(info, dict) or len(str(info.get("token", ""))) < 32:
@@ -97,7 +110,8 @@ def handshake(host: str) -> tuple[dict[str, Any], Credentials]:
     info = fetch_info(host)
     token = str(info["token"])
     ctrl_url = str(info.get("ctrlInfoUrl") or f"http://{host}:{HTTP_PORT}/ctrl")
-    resp = requests.post(ctrl_url, params=sign_params(token), timeout=HTTP_TIMEOUT)
+    with _http() as http:
+        resp = http.post(ctrl_url, params=sign_params(token), timeout=HTTP_TIMEOUT)
     resp.raise_for_status()
     ctrl = resp.json()
     data = ctrl.get("data") if isinstance(ctrl, dict) else None
@@ -160,8 +174,8 @@ def upload_file(
         "X-BBL-OS-Type": platform.system().lower(),
         "X-BBL-OS-Version": platform.release()[:80],
     }
-    with open(path, "rb") as fh:
-        resp = requests.post(
+    with open(path, "rb") as fh, _http() as http:
+        resp = http.post(
             url,
             data={"filename": remote_name},
             files={"gcode": (remote_name, fh, "application/octet-stream")},
